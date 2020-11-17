@@ -1,0 +1,65 @@
+import { schema } from './schema'
+
+interface DefinitelyResponse<Status extends number, Json>
+  extends Response {
+  readonly status: Status
+  json(): Promise<Json>
+}
+
+function buildUri(raw: string, params: Record<string, any> = {}) {
+  const pathParams: string[] = []
+
+  const replaced = raw.replace(/\{([^}]*)\}/g, (_, name) => {
+    pathParams.push(name)
+    return params[name]
+  })
+
+  const queryParams = Object.entries(params).filter(
+    ([name]) => !pathParams.includes(name)
+  )
+
+  if (!queryParams.length) return replaced
+
+  const search = new URLSearchParams()
+
+  for (const [key, value] of queryParams) {
+    if (value != null) {
+      search.append(key, value)
+    }
+  }
+
+  return `${replaced}?${search}`
+}
+
+{{#each endpoints}}
+export async function {{{operationName}}}(
+  {{#if parameters.length}}
+  params: {
+    {{#each parameters}}
+    {{{name}}}{{#unless required}}?{{/unless}}: {{{typeString}}}
+    {{/each}}
+  },
+  {{else}}
+  params: null,
+  {{/if}}
+  {{#if requestBody}}
+  body: {{{requestBody.typeString}}},
+  {{else}}
+  body: null,
+  {{/if}}
+  options?: RequestInit,
+) {
+  const response = await fetch(buildUri('{{{path}}}'{{#if parameters.length}}, params{{/if}}), {
+    {{#if requestBody}}
+    body: JSON.stringify(body),
+    {{/if}}
+    ...options,
+  })
+
+  return response as
+    {{#each responses}}
+    DefinitelyResponse<{{{status}}}, {{{typeString}}}>{{#unless @last}} |{{/unless}}
+    {{/each}}
+}
+
+{{/each}}
