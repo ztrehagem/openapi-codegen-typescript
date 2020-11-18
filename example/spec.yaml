@@ -173,6 +173,26 @@ paths:
           description: permission denied
         404:
           description: not found / already deleted
+  /api/binary:
+    get:
+      tags: [Binary]
+      summary: Binary
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                foo:
+                  type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
 components:
   schemas:
     User:

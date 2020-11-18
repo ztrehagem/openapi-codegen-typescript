@@ -115,8 +115,8 @@ export class Parser {
       return this.convertRequestBody(this.ref(requestBody.$ref))
     }
 
-    const { schema } = requestBody.content['application/json']
-    return { typeString: this.typeString(schema!) }
+    const schema = requestBody.content?.['application/json']?.schema
+    return { typeString: this.typeString(schema) }
   }
 
   protected convertResponse(
@@ -134,15 +134,19 @@ export class Parser {
       return { status: Number(status), typeString: 'null' }
     }
 
-    const { schema } = response.content['application/json']
+    const schema = response.content?.['application/json']?.schema
 
     return { status: Number(status), typeString: this.typeString(schema!) }
   }
 
   protected typeString(
-    schema: oa.SchemaObject | oa.ReferenceObject,
+    schema?: oa.SchemaObject | oa.ReferenceObject,
     { namespaced = true }: { namespaced?: boolean } = {}
   ): string {
+    if (!schema) {
+      return 'unknown'
+    }
+
     if ('$ref' in schema) {
       const typename = schema.$ref.split('/').pop()!
       return this.options.schemaNamespace
