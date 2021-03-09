@@ -147,9 +147,23 @@ export class Parser {
       return 'unknown'
     }
 
+    const typeString: string | null = this.typeStringWithoutNullable(schema, { namespaced })
+
+    if (!typeString) {
+      return 'unknown'
+    }
+
+    if (this.isNullable(schema)) {
+      return `${typeString} | null`
+    }
+
+    return typeString
+  }
+
+  protected typeStringWithoutNullable(schema: oa.SchemaObject | oa.ReferenceObject, { namespaced }: { namespaced: boolean }): string | null {
     if ('$ref' in schema) {
       const typename = schema.$ref.split('/').pop()!
-      return this.options.schemaNamespace
+      return namespaced && this.options.schemaNamespace
         ? `${this.options.schemaNamespace}.${typename}`
         : typename
     }
@@ -177,12 +191,15 @@ export class Parser {
     switch (schema.type) {
       case 'integer':
         return 'number'
+
       case 'array':
         return `Array<${this.typeString(schema.items!, { namespaced })}>`
+
       case 'object':
         if (!schema.properties) {
           return 'object'
         }
+
         return (
           '{ ' +
           Object.entries(schema.properties)
@@ -195,13 +212,21 @@ export class Parser {
             .join('; ') +
           ' }'
         )
+
       case 'string':
       case 'number':
       case 'boolean':
         return schema.type
+    }
 
-      default:
-        return 'unknown'
+    return null
+  }
+
+  protected isNullable(schema: oa.SchemaObject | oa.ReferenceObject): boolean {
+    if ('$ref' in schema) {
+      return this.ref<oa.SchemaObject | null>(schema.$ref)?.nullable ?? false
+    } else {
+      return schema.nullable ?? false
     }
   }
 }
