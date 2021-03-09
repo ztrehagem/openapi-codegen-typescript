@@ -49,7 +49,7 @@ export class Parser {
     const schemas = Object.entries(this.spec.components?.schemas ?? {})
       .map(([name, schema]) => ({
         name,
-        typeString: this.typeString(schema, { namespaced: false }),
+        typeString: this.typeString(schema, { namespaced: false }) ?? 'unknown',
       }))
 
     const endpoints = Object.entries(this.spec.paths)
@@ -106,7 +106,7 @@ export class Parser {
       name: parameter.name,
       in: parameter.in,
       required: !!parameter.required,
-      typeString: this.typeString(parameter.schema!),
+      typeString: this.typeString(parameter.schema!) ?? 'unknown',
     }
   }
 
@@ -116,7 +116,10 @@ export class Parser {
     }
 
     const schema = requestBody.content?.['application/json']?.schema
-    return { typeString: this.typeString(schema) }
+
+    return {
+      typeString: this.typeString(schema) ?? 'unknown'
+    }
   }
 
   protected convertResponse(
@@ -136,21 +139,24 @@ export class Parser {
 
     const schema = response.content?.['application/json']?.schema
 
-    return { status: Number(status), typeString: this.typeString(schema!) }
+    return {
+      status: Number(status),
+      typeString: this.typeString(schema!) ?? 'unknown'
+    }
   }
 
   protected typeString(
     schema?: oa.SchemaObject | oa.ReferenceObject,
     { namespaced = true }: { namespaced?: boolean } = {}
-  ): string {
+  ): string | null {
     if (!schema) {
-      return 'unknown'
+      return null
     }
 
     const typeString: string | null = this.typeStringWithoutNullable(schema, { namespaced })
 
     if (!typeString) {
-      return 'unknown'
+      return null
     }
 
     if (this.isNullable(schema)) {
@@ -172,20 +178,20 @@ export class Parser {
       return schema.allOf
         .map((schema) => this.typeString(schema))
         .filter((typeString) => !!typeString)
-        .join(' & ')
+        .join(' & ') || null
     }
 
     if (schema.oneOf) {
       return schema.oneOf
         .map((schema) => this.typeString(schema))
         .filter((typeString) => !!typeString)
-        .join(' | ')
+        .join(' | ') || null
     }
 
     if (schema.enum) {
       return schema.enum
         .map((str) => (schema.type === 'string' ? `'${str}'` : str))
-        .join(' | ')
+        .join(' | ') || null
     }
 
     switch (schema.type) {
@@ -193,7 +199,7 @@ export class Parser {
         return 'number'
 
       case 'array':
-        return `Array<${this.typeString(schema.items!, { namespaced })}>`
+        return `Array<${this.typeString(schema.items!, { namespaced }) ?? 'unknown'}>`
 
       case 'object':
         if (!schema.properties) {
@@ -207,7 +213,7 @@ export class Parser {
               ([name, property]) =>
                 `${name}${
                   schema.required?.includes(name) ? '' : '?'
-                }: ${this.typeString(property, { namespaced })}`
+                }: ${this.typeString(property, { namespaced }) ?? 'unknown'}`
             )
             .join('; ') +
           ' }'
