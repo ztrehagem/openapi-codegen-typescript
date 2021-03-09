@@ -106,7 +106,7 @@ export class Parser {
       name: parameter.name,
       in: parameter.in,
       required: !!parameter.required,
-      typeString: this.typeString(parameter.schema!) ?? 'unknown',
+      typeString: this.typeString(parameter.schema) ?? 'unknown',
     }
   }
 
@@ -141,7 +141,7 @@ export class Parser {
 
     return {
       status: Number(status),
-      typeString: this.typeString(schema!) ?? 'unknown'
+      typeString: this.typeString(schema) ?? 'unknown'
     }
   }
 
@@ -199,7 +199,7 @@ export class Parser {
         return 'number'
 
       case 'array':
-        return `Array<${this.typeString(schema.items!, { namespaced }) ?? 'unknown'}>`
+        return `Array<${this.typeString(schema.items, { namespaced }) ?? 'unknown'}>`
 
       case 'object':
         if (!schema.properties) {
