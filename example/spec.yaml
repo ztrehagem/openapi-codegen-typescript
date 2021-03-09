@@ -174,7 +174,7 @@ paths:
         404:
           description: not found / already deleted
   /api/binary:
-    get:
+    post:
       tags: [Binary]
       summary: Binary
       requestBody:
@@ -195,6 +195,10 @@ paths:
                 format: binary
 components:
   schemas:
+    DateString:
+      type: string
+      format: date
+      example: '2020-02-02'
     User:
       type: object
       required: [id, name, birthday, unsupportedTypeProperty]
@@ -206,8 +210,7 @@ components:
           type: string
           example: John Doe
         birthday:
-          type: string
-          format: date
+          allOf:
+            - $ref: '#/components/schemas/DateString'
+            - description: user's birthday
           nullable: true
-        unsupportedTypeProperty:
-          type: UnsupportedType
