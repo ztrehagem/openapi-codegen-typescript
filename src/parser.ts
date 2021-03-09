@@ -176,14 +176,14 @@ export class Parser {
 
     if (schema.allOf) {
       return schema.allOf
-        .map((schema) => this.typeString(schema))
+        .map((schema) => this.typeString(schema, { namespaced }))
         .filter((typeString) => !!typeString)
         .join(' & ') || null
     }
 
     if (schema.oneOf) {
       return schema.oneOf
-        .map((schema) => this.typeString(schema))
+        .map((schema) => this.typeString(schema, { namespaced }))
         .filter((typeString) => !!typeString)
         .join(' | ') || null
     }
