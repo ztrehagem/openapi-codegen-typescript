@@ -197,7 +197,7 @@ components:
   schemas:
     User:
       type: object
-      required: [id, name]
+      required: [id, name, unsupportedTypeProperty]
       properties:
         id:
           type: number
@@ -205,3 +205,5 @@ components:
         name:
           type: string
           example: John Doe
+        unsupportedTypeProperty:
+          type: UnsupportedType

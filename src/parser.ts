@@ -195,8 +195,13 @@ export class Parser {
             .join('; ') +
           ' }'
         )
+      case 'string':
+      case 'number':
+      case 'boolean':
+        return schema.type
+
       default:
-        return schema.type!
+        return 'unknown'
     }
   }
 }
