@@ -7,23 +7,24 @@
   ],
   "author": "Shigeki Suwa <shigeki.suwa@ztrehagem.dev>",
   "license": "MIT",
-  "main": "cjs/main.js",
-  "module": "esm/main.js",
-  "types": "esm/main.d.ts",
+  "main": "dist/cjs/main.js",
+  "module": "dist/esm/main.js",
+  "types": "dist/esm/main.d.ts",
   "files": [
-    "esm",
-    "cjs",
+    "dist",
     "templates"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "npm run clean && tsc -p tsconfig.dist-esm.json && tsc -p tsconfig.dist-cjs.json",
+    "build": "run-s clean build:*",
+    "build:esm": "tsc -p tsconfig.dist-esm.json",
+    "build:cjs": "tsc -p tsconfig.dist-cjs.json",
     "example": "run-s build example:*",
     "example:fetch_class": "ts-node example/fetch_class/generate.ts && tsc --noEmit example/fetch_class/driver.ts",
     "example:fetch_function": "ts-node example/fetch_function/generate.ts && tsc --noEmit example/fetch_function/driver.ts",
-    "clean": "rm -rf cjs && rm -rf esm",
+    "clean": "rm -rf dist",
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
