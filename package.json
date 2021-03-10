@@ -7,12 +7,11 @@
   ],
   "author": "Shigeki Suwa <shigeki.suwa@ztrehagem.dev>",
   "license": "MIT",
-  "main": "cjs/main.js",
-  "module": "esm/main.js",
-  "types": "esm/main.d.ts",
+  "main": "dist/cjs/main.js",
+  "module": "dist/esm/main.js",
+  "types": "dist/esm/main.d.ts",
   "files": [
-    "esm",
-    "cjs"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

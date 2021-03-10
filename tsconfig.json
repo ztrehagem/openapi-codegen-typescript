@@ -7,7 +7,6 @@
     "allowJs": true
   },
   "exclude": [
-    "cjs",
-    "esm"
+    "dist"
   ]
 }
