@@ -3,8 +3,9 @@ info:
   title: Example API
   version: '1.0.0'
 paths:
-  /api/session:
+  /session:
     get:
+      operationId: getSession
       tags: [Session]
       summary: check existence of session
       responses:
@@ -13,6 +14,7 @@ paths:
         401:
           description: unauthorized
     post:
+      operationId: createSession
       tags: [Session]
       summary: create session
       requestBody:
@@ -42,13 +44,15 @@ paths:
                     type: string
                     example: Wrong login information
     delete:
+      operationId: deleteSession
       tags: [Session]
       summary: delete sesion
       responses:
         204:
           description: logged out
-  /api/users:
+  /users:
     get:
+      operationId: indexUsers
       tags: [User]
       summary: search users
       parameters:
@@ -71,6 +75,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/User'
     post:
+      operationId: createUser
       tags: [User]
       summary: register new user
       requestBody:
@@ -114,15 +119,16 @@ paths:
                         message:
                           type: string
                           example: Invalid characters included.
-  /api/users/{id}:
+  /users/{user_id}:
     parameters:
       - in: path
-        name: id
+        name: user_id
         required: true
         schema:
           type: number
           example: 12345
     get:
+      operationId: getUser
       tags: [User]
       summary: get a user
       responses:
@@ -141,6 +147,7 @@ paths:
         404:
           description: not found
     put:
+      operationId: updateUser
       tags: [User]
       summary: update user information
       requestBody:
@@ -164,6 +171,7 @@ paths:
                   user:
                     $ref: '#/components/schemas/User'
     delete:
+      operationId: deleteUser
       tags: [User]
       summary: unregister a user
       responses:
@@ -173,8 +181,9 @@ paths:
           description: permission denied
         404:
           description: not found / already deleted
-  /api/binary:
+  /binary:
     post:
+      operationId: postBinary
       tags: [Binary]
       summary: Binary
       requestBody:
@@ -199,6 +208,10 @@ components:
       type: string
       format: date
       example: '2020-02-02'
+    DateTimeString:
+      type: string
+      format: date-time
+      example: '2020-02-02T23:59:59Z'
     User:
       type: object
       required: [id, name, birthday, unsupportedTypeProperty]
@@ -210,7 +223,8 @@ components:
           type: string
           example: John Doe
         birthday:
-          allOf:
+          oneOf:
             - $ref: '#/components/schemas/DateString'
-            - description: user's birthday
+            - $ref: '#/components/schemas/DateTimeString'
+          description: user's birthday
           nullable: true

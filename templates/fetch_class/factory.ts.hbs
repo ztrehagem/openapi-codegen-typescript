@@ -1,0 +1,42 @@
+import type { TypedResponse } from './core/type';
+import { Session } from './core/session';
+import { SessionFactory } from './core/session_factory';
+import type * as schema from './schema';
+
+export class Factory extends SessionFactory {
+  {{#each endpoints}}
+
+  {{{operationName}}}() {
+    return new Session<
+      {
+        {{#if pathParameters.length}}
+        params: {
+          {{#each pathParameters}}
+          {{{name}}}{{#unless required}}?{{/unless}}: {{{typeString}}}
+          {{/each}}
+        },
+        {{else}}
+        params?: null,
+        {{/if}}
+        {{#if queryParameters.length}}
+        query: {
+          {{#each queryParameters}}
+          {{{name}}}{{#unless required}}?{{/unless}}: {{{typeString}}}
+          {{/each}}
+        },
+        {{else}}
+        query?: null,
+        {{/if}}
+        {{#if requestBody}}
+        body: {{{requestBody.typeString}}},
+        {{else}}
+        body?: null,
+        {{/if}}
+      },
+      {{#each responses}}
+      | TypedResponse<{{{status}}}, {{{typeString}}}>
+      {{/each}}
+    >(this.config, { method: '{{{method}}}', path: '{{{path}}}' })
+  }
+  {{/each}}
+}
