@@ -12,18 +12,18 @@
   "types": "esm/main.d.ts",
   "files": [
     "esm",
-    "cjs"
+    "cjs",
+    "templates"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.dist-esm.json && tsc -p tsconfig.dist-cjs.json",
-    "preexample": "npm run build",
-    "example": "run-s example:*",
-    "example:legacy": "ts-node example/main.ts && tsc --noEmit example/driver.ts",
-    "example:fetch-class": "ts-node generates/fetch_class/example/generate.ts && tsc --noEmit generates/fetch_class/example/driver.ts",
-    "clean": "rm -rf dist",
+    "example": "run-s build example:*",
+    "example:fetch_class": "ts-node example/fetch_class/generate.ts && tsc --noEmit example/fetch_class/driver.ts",
+    "example:fetch_function": "ts-node example/fetch_function/generate.ts && tsc --noEmit example/fetch_function/driver.ts",
+    "clean": "rm -rf cjs && rm -rf esm",
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
