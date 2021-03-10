@@ -14,7 +14,7 @@ type Handlebars = typeof handlebars
 export interface RendererOptions {
   srcDir: string
   outDir: string
-  srcFileGlob?: string
+  srcFileGlob?: string | string[]
   renameFile?: (filePath: string) => string
   configHandlebars?: (handlebars: Handlebars) => void
 }
