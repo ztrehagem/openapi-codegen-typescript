@@ -19,7 +19,10 @@
   },
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.dist-esm.json && tsc -p tsconfig.dist-cjs.json",
-    "example": "npm run build && ts-node example/main.ts && tsc --noEmit example/driver.ts",
+    "preexample": "npm run build",
+    "example": "run-s example:*",
+    "example:legacy": "ts-node example/main.ts && tsc --noEmit example/driver.ts",
+    "example:fetch-class": "ts-node generates/fetch_class/example/generate.ts && tsc --noEmit generates/fetch_class/example/driver.ts",
     "clean": "rm -rf dist",
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -31,6 +34,7 @@
   },
   "devDependencies": {
     "@types/node": "^14.14.7",
+    "npm-run-all": "^4.1.5",
     "openapi-types": "^7.0.1",
     "ts-node": "^9.0.0",
     "typescript": "~4.0.5"
