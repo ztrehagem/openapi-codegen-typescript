@@ -7,6 +7,7 @@ import type { Parsed } from './parser'
 
 const readFileAsync = util.promisify(fs.readFile)
 const writeFileAsync = util.promisify(fs.writeFile)
+const mkdirAsync = util.promisify(fs.mkdir)
 
 type Handlebars = typeof handlebars
 
@@ -45,6 +46,8 @@ export class Renderer {
         const hbs = (await readFileAsync(srcFilePath)).toString()
         const rendered = compiler.compile(hbs)(parsed)
         const outFilePath = path.join(this.options.outDir, this.options.renameFile(hbsPath))
+        const outFileDir = path.dirname(outFilePath)
+        await mkdirAsync(outFileDir, { recursive: true })
         await writeFileAsync(outFilePath, rendered)
       })
     )
