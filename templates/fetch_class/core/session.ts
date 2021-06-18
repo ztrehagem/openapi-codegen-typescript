@@ -18,8 +18,10 @@ export class Session<Req extends RequestData = RequestData, Res extends TypedRes
   }
 
   call(option: Req, requestInit?: RequestInit) {
-    const uri = this.path.replace(/\{([^}]*)\}/g, (_, name) => (option.params ?? {})[name].toString())
-    const url = new URL(uri, this.config.base)
+    const uri = this.path
+      .replace(/\{([^}]*)\}/g, (_, name) => (option.params ?? {})[name].toString())
+      .replace(/^\//, '')
+    const url = new URL(uri, this.config.base.replace(/([^/])$/, '$1/'))
 
     for (const [key, value] of Object.entries(option.query ?? {})) {
       url.searchParams.set(key, value.toString())
