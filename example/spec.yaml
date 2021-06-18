@@ -1,7 +1,7 @@
-openapi: '3.0.3'
+openapi: "3.0.3"
 info:
   title: Example API
-  version: '1.0.0'
+  version: "1.0.0"
 paths:
   /session:
     get:
@@ -29,7 +29,8 @@ paths:
                   example: me@example.com
                 password:
                   type: string
-                  example: password
+                  format: password
+                  example: Passw0rd!
       responses:
         204:
           description: logged in
@@ -38,11 +39,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Wrong login information
+                $ref: "#/components/schemas/ValidationErrorResp"
     delete:
       operationId: deleteSession
       tags: [Session]
@@ -73,7 +70,7 @@ paths:
                   users:
                     type: array
                     items:
-                      $ref: '#/components/schemas/User'
+                      $ref: "#/components/schemas/User"
     post:
       operationId: createUser
       tags: [User]
@@ -83,11 +80,10 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name]
+              required: [user]
               properties:
-                name:
-                  type: string
-                  example: John Doe
+                user:
+                  $ref: "#/components/schemas/User"
       responses:
         201:
           description: created
@@ -98,34 +94,20 @@ paths:
                 required: [user]
                 properties:
                   user:
-                    $ref: '#/components/schemas/User'
+                    $ref: "#/components/schemas/User"
         400:
           description: invalid parameters
           content:
             application/json:
               schema:
-                type: object
-                required: [errors]
-                properties:
-                  errors:
-                    type: array
-                    items:
-                      type: object
-                      required: [key, message]
-                      properties:
-                        key:
-                          type: string
-                          example: name
-                        message:
-                          type: string
-                          example: Invalid characters included.
+                $ref: "#/components/schemas/ValidationErrorResp"
   /users/{user_id}:
     parameters:
       - in: path
         name: user_id
         required: true
         schema:
-          type: number
+          type: integer
           example: 12345
     get:
       operationId: getUser
@@ -141,7 +123,7 @@ paths:
                 required: [user]
                 properties:
                   user:
-                    $ref: '#/components/schemas/User'
+                    $ref: "#/components/schemas/User"
         401:
           description: login required
         404:
@@ -154,11 +136,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: John
+              $ref: "#/components/schemas/User"
       responses:
         201:
           description: updated
@@ -169,7 +147,13 @@ paths:
                 required: [user]
                 properties:
                   user:
-                    $ref: '#/components/schemas/User'
+                    $ref: "#/components/schemas/User"
+        400:
+          description: invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResp"
     delete:
       operationId: deleteUser
       tags: [User]
@@ -207,24 +191,44 @@ components:
     DateString:
       type: string
       format: date
-      example: '2020-02-02'
+      example: "2020-02-02"
     DateTimeString:
       type: string
       format: date-time
-      example: '2020-02-02T23:59:59Z'
+      example: "2020-02-02T23:59:59Z"
+    ValidationError:
+      type: object
+      required: [key, message]
+      properties:
+        key:
+          type: string
+          example: name
+        message:
+          type: string
+          example: Invalid characters included.
+    ValidationErrors:
+      type: array
+      items:
+        $ref: "#/components/schemas/ValidationError"
+    ValidationErrorResp:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          $ref: "#/components/schemas/ValidationErrors"
     User:
       type: object
-      required: [id, name, birthday, unsupportedTypeProperty]
+      required: [id, name, birthday]
       properties:
         id:
-          type: number
+          type: integer
           example: 12345
+          readOnly: true
         name:
           type: string
           example: John Doe
         birthday:
-          oneOf:
-            - $ref: '#/components/schemas/DateString'
-            - $ref: '#/components/schemas/DateTimeString'
-          description: user's birthday
-          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/DateString"
+            - description: user's birthday
+              nullable: true
