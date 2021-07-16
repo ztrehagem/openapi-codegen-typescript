@@ -216,6 +216,18 @@ components:
       properties:
         errors:
           $ref: "#/components/schemas/ValidationErrors"
+    ImageSet:
+      type: object
+      properties:
+        sm:
+          type: string
+          nullable: true
+        md:
+          type: string
+          nullable: true
+        lg:
+          type: string
+          nullable: true
     User:
       type: object
       required: [id, name]
@@ -232,3 +244,15 @@ components:
             - $ref: "#/components/schemas/DateString"
           description: user's birthday
           nullable: true
+        image:
+          allOf:
+            - $ref: "#/components/schemas/ImageSet"
+          readOnly: true
+        imagePost:
+          type: string
+          nullable: true
+          writeOnly: true
+        password:
+          type: string
+          format: password
+          writeOnly: true
