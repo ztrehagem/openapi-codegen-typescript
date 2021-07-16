@@ -6,6 +6,7 @@ const httpMethods = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch',
 export interface ParserOptions {
   schemaNamespace?: string
   transformPath?: (path: string) => string
+  ignoreRequiredProp?: boolean
 }
 
 export type Parsed = ReturnType<Parser['parse']> extends Promise<infer U> ? U : never
@@ -32,6 +33,7 @@ export class Parser {
       ...options,
       schemaNamespace: options.schemaNamespace ?? '',
       transformPath: options.transformPath ?? ((path: string) => path),
+      ignoreRequiredProp: options.ignoreRequiredProp ?? false,
     }
   }
 
@@ -105,7 +107,7 @@ export class Parser {
     return {
       name: parameter.name,
       in: parameter.in,
-      required: !!parameter.required,
+      required: this.options.ignoreRequiredProp ? true : !!parameter.required,
       typeString: this.typeString(parameter.schema) ?? 'unknown',
     }
   }
@@ -212,7 +214,7 @@ export class Parser {
             .map(
               ([name, property]) =>
                 `${name}${
-                  schema.required?.includes(name) ? '' : '?'
+                  this.options.ignoreRequiredProp || schema.required?.includes(name) ? '' : '?'
                 }: ${this.typeString(property, { namespaced }) ?? 'unknown'}`
             )
             .join('; ') +

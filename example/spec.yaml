@@ -218,7 +218,7 @@ components:
           $ref: "#/components/schemas/ValidationErrors"
     User:
       type: object
-      required: [id, name, birthday]
+      required: [id, name]
       properties:
         id:
           type: integer
