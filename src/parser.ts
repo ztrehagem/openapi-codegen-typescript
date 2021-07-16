@@ -9,7 +9,42 @@ export interface ParserOptions {
   ignoreRequiredProp?: boolean
 }
 
-export type Parsed = ReturnType<Parser['parse']> extends Promise<infer U> ? U : never
+export interface Parsed {
+  schemas: ParsedSchema[]
+  endpoints: ParsedEndpoint[]
+}
+
+export interface ParsedSchema {
+  name: string
+  typeString: string
+}
+
+export interface ParsedParameter {
+  name: string
+  in: string
+  required: boolean
+  typeString: string
+}
+
+export interface ParsedRequestBody {
+  typeString: string
+}
+
+export interface ParsedResponse {
+  status: number
+  typeString: string
+}
+
+export interface ParsedEndpoint {
+  path: string
+  method: string
+  operationName: string
+  parameters: ParsedParameter[]
+  pathParameters: ParsedParameter[]
+  queryParameters: ParsedParameter[]
+  requestBody: ParsedRequestBody | null
+  responses: ParsedResponse[]
+}
 
 function fallbackOperationId(path: string, method: string) {
   const pathPascalCased = path
@@ -24,8 +59,8 @@ function fallbackOperationId(path: string, method: string) {
 
 export class Parser {
   protected readonly raw: any
-  protected readonly swaggerParser = new SwaggerParser()
-  protected readonly options: Required<ParserOptions>
+  protected readonly bundled = new SwaggerParser()
+  protected readonly options: Readonly<Required<ParserOptions>>
 
   constructor(raw: any, options: ParserOptions) {
     this.raw = raw
@@ -38,23 +73,23 @@ export class Parser {
   }
 
   protected get spec() {
-    return this.swaggerParser.api as oa.Document
+    return this.bundled.api as oa.Document
   }
 
   protected ref<T>(refString: string): T {
-    return this.swaggerParser.$refs.get(refString)
+    return this.bundled.$refs.get(refString)
   }
 
   async parse() {
-    await this.swaggerParser.bundle(this.raw)
+    await this.bundled.bundle(this.raw)
 
-    const schemas = Object.entries(this.spec.components?.schemas ?? {})
+    const schemas: ParsedSchema[] = Object.entries(this.spec.components?.schemas ?? {})
       .map(([name, schema]) => ({
         name,
         typeString: this.typeString(schema, { namespaced: false }) ?? 'unknown',
       }))
 
-    const endpoints = Object.entries(this.spec.paths)
+    const endpoints: ParsedEndpoint[] = Object.entries(this.spec.paths)
       .flatMap(([path, pathItem]) =>
         pathItem
           ? httpMethods
@@ -70,7 +105,7 @@ export class Parser {
     }
   }
 
-  protected convertEndpoint(path: string, method: string, operation: oa.OperationObject, operationParameters: (oa.ParameterObject | oa.ReferenceObject)[] = []) {
+  protected convertEndpoint(path: string, method: string, operation: oa.OperationObject, operationParameters: (oa.ParameterObject | oa.ReferenceObject)[] = []): ParsedEndpoint {
     path = this.options.transformPath(path)
 
     const parameters = [...operationParameters, ...(operation.parameters ?? [])]
@@ -81,29 +116,21 @@ export class Parser {
 
     return {
       path,
-
       method,
-
-      operationName:
-        operation.operationId || fallbackOperationId(path, method),
-
+      operationName: operation.operationId || fallbackOperationId(path, method),
       parameters,
-
       pathParameters: parameters.filter((p) => p.in === 'path'),
-
       queryParameters: parameters.filter((p) => p.in === 'query'),
-
       requestBody: operation.requestBody
         ? this.convertRequestBody(operation.requestBody)
         : null,
-
       responses: Object.entries(operation.responses!).map(([status, response]: [string, oa.ResponseObject | oa.ReferenceObject]) =>
         this.convertResponse(status, response)
       ),
     }
   }
 
-  protected convertParameter(parameter: oa.ParameterObject) {
+  protected convertParameter(parameter: oa.ParameterObject): ParsedParameter {
     return {
       name: parameter.name,
       in: parameter.in,
@@ -112,7 +139,7 @@ export class Parser {
     }
   }
 
-  protected convertRequestBody(requestBody: oa.RequestBodyObject | oa.ReferenceObject): { typeString: string } {
+  protected convertRequestBody(requestBody: oa.RequestBodyObject | oa.ReferenceObject): ParsedRequestBody {
     if ('$ref' in requestBody) {
       return this.convertRequestBody(this.ref(requestBody.$ref))
     }
@@ -127,7 +154,7 @@ export class Parser {
   protected convertResponse(
     status: string,
     response: oa.ResponseObject | oa.ReferenceObject
-  ): { status: number; typeString: string } {
+  ): ParsedResponse {
     if ('$ref' in response) {
       return this.convertResponse(
         status,
