@@ -1,6 +1,7 @@
 import { Factory } from './dest/factory'
 import { Session } from './dest/core/session'
 import * as schema from './dest/schema'
+import { blockParams } from 'handlebars'
 
 const factory = new Factory({
   base: 'http://localhost:5000/api/',
@@ -82,6 +83,46 @@ namespace api {
       }
     }
   }
+
+  export namespace createUser {
+    export interface Params {
+      name: string
+      birthday: Date | null
+    }
+
+    export interface Result {
+      user?: model.User
+    }
+
+    export class Session extends SessionBase<Params, Result> {
+      protected readonly session = factory.createUser()
+
+      protected async call(params: Params) {
+        const res = await this.session.call({
+          body: {
+            user: {
+              name: params.name,
+              birthday: params.birthday?.toISOString() ?? null,
+            }
+          }
+        })
+
+        switch (res.status) {
+          case 201: {
+            const { user } = await res.json()
+            return { user: new model.User(user) }
+          }
+
+          case 400:
+            return {}
+
+          default:
+            console.error(res)
+            throw new Error('ApiResponseError')
+        }
+      }
+    }
+  }
 }
 
 async function main() {
@@ -93,6 +134,24 @@ async function main() {
       console.log(`${user.name} was born in ${user.birthday?.getFullYear() ?? 'XXXX'}.`)
     } else {
       console.log('not found')
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function main2() {
+  const session = new api.createUser.Session()
+
+  try {
+    const { user } = await session.exec({
+      name: 'John Doe',
+      birthday: null,
+    })
+    if (user) {
+      console.log('created')
+    } else {
+      console.log('validation error')
     }
   } catch (error) {
     console.error(error)

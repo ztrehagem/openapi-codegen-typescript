@@ -14,7 +14,7 @@ api.getUser({ user_id: 123 }, null).then(async (response) => {
   }
 })
 
-api.createUser(null, { name: 'John Doe' }).then(async (response) => {
+api.createUser(null, { user: { name: 'John Doe' } }).then(async (response) => {
   switch (response.status) {
     case 201: {
       const payload = await response.json()
