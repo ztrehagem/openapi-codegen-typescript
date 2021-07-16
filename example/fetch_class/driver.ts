@@ -14,7 +14,7 @@ namespace model {
     readonly name: string
     readonly birthday?: Date
 
-    constructor(raw: schema.User) {
+    constructor(raw: schema.UserReadable) {
       this.id = raw.id
       this.name = raw.name
       if (raw.birthday) {
@@ -103,6 +103,8 @@ namespace api {
             user: {
               name: params.name,
               birthday: params.birthday?.toISOString() ?? null,
+              imagePost: null,
+              password: 'password'
             }
           }
         })

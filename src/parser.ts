@@ -46,6 +46,12 @@ export interface ParsedEndpoint {
   responses: ParsedResponse[]
 }
 
+export interface TypeStringContext {
+  namespaced: boolean
+  readable: boolean
+  writable: boolean
+}
+
 function fallbackOperationId(path: string, method: string) {
   const pathPascalCased = path
     .replace(/(?:\/|_)(\w)/g, (_, c) => c.toUpperCase())
@@ -84,10 +90,30 @@ export class Parser {
     await this.bundled.bundle(this.raw)
 
     const schemas: ParsedSchema[] = Object.entries(this.spec.components?.schemas ?? {})
-      .map(([name, schema]) => ({
-        name,
-        typeString: this.typeString(schema, { namespaced: false }) ?? 'unknown',
-      }))
+      .flatMap(([name, schema]) => {
+        const schemas: ParsedSchema[] = []
+
+        schemas.push({
+          name,
+          typeString: this.typeString(schema, { namespaced: false }) ?? 'unknown',
+        })
+
+        if (this.hasReadOnly(schema)) {
+          schemas.push({
+            name: name + 'Writable',
+            typeString: this.typeString(schema, { namespaced: false, writable: true }) ?? 'unknown',
+          })
+        }
+
+        if (this.hasWriteOnly(schema)) {
+          schemas.push({
+            name: name + 'Readable',
+            typeString: this.typeString(schema, { namespaced: false, readable: true }) ?? 'unknown',
+          })
+        }
+
+        return schemas
+      })
 
     const endpoints: ParsedEndpoint[] = Object.entries(this.spec.paths)
       .flatMap(([path, pathItem]) =>
@@ -147,7 +173,7 @@ export class Parser {
     const schema = requestBody.content?.['application/json']?.schema
 
     return {
-      typeString: this.typeString(schema) ?? 'unknown'
+      typeString: this.typeString(schema, { writable: true }) ?? 'unknown'
     }
   }
 
@@ -170,19 +196,23 @@ export class Parser {
 
     return {
       status: Number(status),
-      typeString: this.typeString(schema) ?? 'unknown'
+      typeString: this.typeString(schema, { readable: true }) ?? 'unknown'
     }
   }
 
   protected typeString(
     schema?: oa.SchemaObject | oa.ReferenceObject,
-    { namespaced = true }: { namespaced?: boolean } = {}
+    { namespaced = true, writable = false, readable = false }: Partial<TypeStringContext> = {}
   ): string | null {
     if (!schema) {
       return null
     }
 
-    const typeString: string | null = this.typeStringWithoutNullable(schema, { namespaced })
+    const typeString: string | null = this.typeStringWithoutNullable(schema, {
+      namespaced,
+      writable,
+      readable,
+    })
 
     if (!typeString) {
       return null
@@ -195,24 +225,33 @@ export class Parser {
     return typeString
   }
 
-  protected typeStringWithoutNullable(schema: oa.SchemaObject | oa.ReferenceObject, { namespaced }: { namespaced: boolean }): string | null {
+  protected typeStringWithoutNullable(
+    schema: oa.SchemaObject | oa.ReferenceObject,
+    context: TypeStringContext
+  ): string | null {
     if ('$ref' in schema) {
-      const typename = schema.$ref.split('/').pop()!
-      return namespaced && this.options.schemaNamespace
-        ? `${this.options.schemaNamespace}.${typename}`
-        : typename
+      let typename = schema.$ref.split('/').pop()!
+      if (context.namespaced && this.options.schemaNamespace) {
+        typename = `${this.options.schemaNamespace}.${typename}`
+      }
+      if (context.writable && this.hasReadOnly(schema)) {
+        typename += 'Writable'
+      } else if (context.readable && this.hasWriteOnly(schema)) {
+        typename += 'Readable'
+      }
+      return typename
     }
 
     if (schema.allOf) {
       return schema.allOf
-        .map((schema) => this.typeString(schema, { namespaced }))
+        .map((schema) => this.typeString(schema, context))
         .filter((typeString) => !!typeString)
         .join(' & ') || null
     }
 
     if (schema.oneOf) {
       return schema.oneOf
-        .map((schema) => this.typeString(schema, { namespaced }))
+        .map((schema) => this.typeString(schema, context))
         .filter((typeString) => !!typeString)
         .join(' | ') || null
     }
@@ -228,25 +267,31 @@ export class Parser {
         return 'number'
 
       case 'array':
-        return `Array<${this.typeString(schema.items, { namespaced }) ?? 'unknown'}>`
+        return `Array<${this.typeString(schema.items, context) ?? 'unknown'}>`
 
-      case 'object':
+      case 'object': {
         if (!schema.properties) {
           return 'object'
         }
 
+        let entries = Object.entries(schema.properties)
+        if (context.readable) {
+          entries = entries.filter(([name, property]) => !('writeOnly' in property && property.writeOnly))
+        }
+        if (context.writable) {
+          entries = entries.filter(([name, property]) => !('readOnly' in property && property.readOnly))
+        }
         return (
           '{ ' +
-          Object.entries(schema.properties)
-            .map(
-              ([name, property]) =>
-                `${name}${
-                  this.options.ignoreRequiredProp || schema.required?.includes(name) ? '' : '?'
-                }: ${this.typeString(property, { namespaced }) ?? 'unknown'}`
-            )
-            .join('; ') +
+          entries.map(
+            ([name, property]) =>
+              `${name}${
+                this.options.ignoreRequiredProp || schema.required?.includes(name) ? '' : '?'
+              }: ${this.typeString(property, context) ?? 'unknown'}`
+          ).join('; ') +
           ' }'
         )
+      }
 
       case 'string':
       case 'number':
@@ -263,5 +308,38 @@ export class Parser {
     } else {
       return schema.nullable ?? false
     }
+  }
+
+  protected hasReadOnly(schema: oa.SchemaObject | oa.ReferenceObject): boolean {
+    return this.hasSchemaPropertyRecursive('readOnly', schema)
+  }
+
+  protected hasWriteOnly(schema: oa.SchemaObject | oa.ReferenceObject): boolean {
+    return this.hasSchemaPropertyRecursive('writeOnly', schema)
+  }
+
+  protected hasSchemaPropertyRecursive(property: keyof oa.SchemaObject, schema: oa.SchemaObject | oa.ReferenceObject): boolean {
+    if ('$ref' in schema) {
+      const ref = this.ref<oa.SchemaObject | null>(schema.$ref)
+      if (!ref) return false
+      return this.hasSchemaPropertyRecursive(property, ref)
+    }
+
+    if (schema.allOf?.some((schema) => this.hasSchemaPropertyRecursive(property, schema))) {
+      return true
+    }
+
+    if (schema.oneOf?.some((schema) => this.hasSchemaPropertyRecursive(property, schema))) {
+      return true
+    }
+
+    if (
+      schema.type === 'object' &&
+      Object.values(schema.properties ?? {}).some((schema) => this.hasSchemaPropertyRecursive(property, schema))
+    ) {
+      return true
+    }
+
+    return property in schema
   }
 }
