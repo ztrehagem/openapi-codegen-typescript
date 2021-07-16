@@ -1,11 +1,12 @@
 import * as path from 'path'
-import { Parser } from '../parser'
+import { Parser, ParserOptions } from '../parser'
 import { Renderer } from '../renderer'
 import * as getPackageDir from 'pkg-dir'
 
 interface Options {
   document: string
   outDir: string
+  parserOptions?: ParserOptions
 }
 
 export async function generate(options: Options) {
@@ -13,6 +14,7 @@ export async function generate(options: Options) {
 
   const parser = new Parser(options.document, {
     schemaNamespace: 'schema',
+    ...options.parserOptions ?? {},
   })
 
   const renderer = new Renderer({
