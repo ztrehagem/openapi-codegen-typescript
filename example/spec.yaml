@@ -230,5 +230,5 @@ components:
         birthday:
           allOf:
             - $ref: "#/components/schemas/DateString"
-            - description: user's birthday
-              nullable: true
+          description: user's birthday
+          nullable: true
