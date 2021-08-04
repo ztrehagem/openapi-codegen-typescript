@@ -6,7 +6,7 @@ const httpMethods = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch',
 export interface ParserOptions {
   schemaNamespace?: string
   transformPath?: (path: string) => string
-  ignoreRequiredProp?: boolean
+  ignoreRequiredProp?: boolean | Partial<Record<'parameters' | 'schemas', boolean>>
 }
 
 export interface Parsed {
@@ -66,7 +66,14 @@ function fallbackOperationId(path: string, method: string) {
 export class Parser {
   protected readonly raw: any
   protected readonly bundled = new SwaggerParser()
-  protected readonly options: Readonly<Required<ParserOptions>>
+  protected readonly options: Readonly<{
+    schemaNamespace: string;
+    transformPath: (path: string) => string;
+    ignoreRequiredProp: {
+      parameters: boolean;
+      schemas: boolean;
+    };
+  }>
 
   constructor(raw: any, options: ParserOptions) {
     this.raw = raw
@@ -74,7 +81,10 @@ export class Parser {
       ...options,
       schemaNamespace: options.schemaNamespace ?? '',
       transformPath: options.transformPath ?? ((path: string) => path),
-      ignoreRequiredProp: options.ignoreRequiredProp ?? false,
+      ignoreRequiredProp: {
+        parameters: typeof options.ignoreRequiredProp === 'boolean' ? options.ignoreRequiredProp : options.ignoreRequiredProp?.parameters ?? false,
+        schemas: typeof options.ignoreRequiredProp === 'boolean' ? options.ignoreRequiredProp : options.ignoreRequiredProp?.schemas ?? false,
+      },
     }
   }
 
@@ -160,7 +170,7 @@ export class Parser {
     return {
       name: parameter.name,
       in: parameter.in,
-      required: this.options.ignoreRequiredProp ? true : !!parameter.required,
+      required: this.options.ignoreRequiredProp.parameters ? true : !!parameter.required,
       typeString: this.typeString(parameter.schema) ?? 'unknown',
     }
   }
@@ -286,7 +296,7 @@ export class Parser {
           entries.map(
             ([name, property]) =>
               `${name}${
-                this.options.ignoreRequiredProp || schema.required?.includes(name) ? '' : '?'
+                this.options.ignoreRequiredProp.schemas || schema.required?.includes(name) ? '' : '?'
               }: ${this.typeString(property, context) ?? 'unknown'}`
           ).join('; ') +
           ' }'

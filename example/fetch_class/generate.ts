@@ -5,6 +5,9 @@ generateFetchClass({
   document: path.join(__dirname, '../spec.yaml'),
   outDir: path.join(__dirname, './dest'),
   parserOptions: {
-    ignoreRequiredProp: true,
+    ignoreRequiredProp: {
+      parameters: false,
+      schemas: true,
+    },
   },
 })
