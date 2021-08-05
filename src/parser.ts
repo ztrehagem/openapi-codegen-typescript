@@ -295,7 +295,7 @@ export class Parser {
           '{ ' +
           entries.map(
             ([name, property]) =>
-              `${name}${
+              `"${name}"${
                 this.options.ignoreRequiredProp.schemas || schema.required?.includes(name) ? '' : '?'
               }: ${this.typeString(property, context) ?? 'unknown'}`
           ).join('; ') +
