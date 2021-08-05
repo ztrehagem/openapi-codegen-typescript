@@ -36,7 +36,7 @@ export async function {{{operationName}}}(
   {{#if parameters.length}}
   params: {
     {{#each parameters}}
-    {{{name}}}{{#unless required}}?{{/unless}}: {{{typeString}}}
+    "{{{name}}}"{{#unless required}}?{{/unless}}: {{{typeString}}}
     {{/each}}
   },
   {{else}}

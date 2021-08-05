@@ -23,9 +23,7 @@ export class Session<Req extends RequestData = RequestData, Res extends TypedRes
       .replace(/^\//, '')
     const url = new URL(uri, this.config.base.replace(/([^/])$/, '$1/'))
 
-    for (const [key, value] of Object.entries(option.query ?? {})) {
-      url.searchParams.set(key, value.toString())
-    }
+    this.configSearchParams(url.searchParams, option.query)
 
     return this.config.fetch(url.toString(), {
       method: this.method,
@@ -33,6 +31,18 @@ export class Session<Req extends RequestData = RequestData, Res extends TypedRes
       ...this.requestInit,
       ...requestInit,
     }) as Promise<Res>
+  }
+
+  configSearchParams(searchParams: URLSearchParams, query: Req["query"]): void {
+    for (const [key, value] of Object.entries(query ?? {})) {
+      if (Array.isArray(value)) {
+        for (const element of value) {
+          searchParams.append(key, element.toString())
+        }
+      } else {
+        searchParams.set(key, value.toString())
+      }
+    }
   }
 
   setRequestInit(requestInit: RequestInit) {
