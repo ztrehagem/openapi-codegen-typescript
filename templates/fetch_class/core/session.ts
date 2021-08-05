@@ -35,8 +35,16 @@ export class Session<Req extends RequestData = RequestData, Res extends TypedRes
 
   configSearchParams(searchParams: URLSearchParams, query: Req["query"]): void {
     for (const [key, value] of Object.entries(query ?? {})) {
+      if (value == null) {
+        continue
+      }
+
       if (Array.isArray(value)) {
         for (const element of value) {
+          if (element == null) {
+            continue
+          }
+
           searchParams.append(key, element.toString())
         }
       } else {
