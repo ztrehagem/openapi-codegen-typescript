@@ -1,5 +1,4 @@
 import type { TypedResponse } from './core/type';
-import { Session } from './core/session';
 import { SessionFactory } from './core/session_factory';
 import type * as schema from './schema';
 
@@ -7,7 +6,7 @@ export class Factory extends SessionFactory {
   {{#each endpoints}}
 
   {{{operationName}}}() {
-    return new Session<
+    return new this.SessionClass<
       {
         {{#if pathParameters.length}}
         params: {
