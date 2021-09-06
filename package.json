@@ -1,6 +1,6 @@
 {
   "name": "@ztrehagem/openapi-codegen-typescript",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Code generation tools from OpenAPI Specification to TypeScript.",
   "keywords": [
     "OpenAPI"
