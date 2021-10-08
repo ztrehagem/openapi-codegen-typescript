@@ -225,7 +225,7 @@ export class Parser {
     })
 
     if (!typeString) {
-      return null
+      return this.isNullable(schema) ? 'null' : null
     }
 
     if (this.isNullable(schema)) {
