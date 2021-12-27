@@ -14,7 +14,7 @@ paths:
         401:
           description: unauthorized
     post:
-      operationId: createSession
+      operationId: create-session
       tags: [Session]
       summary: create session
       requestBody:

@@ -1,12 +1,15 @@
 import { OpenAPIV3 as oa } from 'openapi-types'
 import * as SwaggerParser from '@apidevtools/swagger-parser'
 import { pascalCase } from 'pascal-case'
+import { camelCase } from 'camel-case';
+import { snakeCase } from 'snake-case';
 
 const httpMethods = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const
 
 export interface ParserOptions {
   schemaNamespace?: string
   transformPath?: (path: string) => string
+  transformOperationId?: 'camel' | 'snake' | ((operationId: string) => string)
   ignoreRequiredProp?: boolean | Partial<Record<'parameters' | 'schemas', boolean>>
 }
 
@@ -58,12 +61,30 @@ function fallbackOperationId(path: string, method: string) {
   return `${method}${pathPascalCased}`
 }
 
+function getOperationIdTransformer(option: ParserOptions['transformOperationId']): (operationId: string) => string {
+  if (typeof option === 'function') {
+    return option
+  }
+
+  switch (option) {
+    case 'camel':
+      return camelCase
+
+    case 'snake':
+      return snakeCase
+
+    default:
+      return (operationId: string) => operationId
+  }
+}
+
 export class Parser {
   protected readonly raw: any
   protected readonly bundled = new SwaggerParser()
   protected readonly options: Readonly<{
     schemaNamespace: string;
     transformPath: (path: string) => string;
+    transformOperationId: (operationId: string) => string;
     ignoreRequiredProp: {
       parameters: boolean;
       schemas: boolean;
@@ -76,6 +97,7 @@ export class Parser {
       ...options,
       schemaNamespace: options.schemaNamespace ?? '',
       transformPath: options.transformPath ?? ((path: string) => path),
+      transformOperationId: getOperationIdTransformer(options.transformOperationId),
       ignoreRequiredProp: {
         parameters: typeof options.ignoreRequiredProp === 'boolean' ? options.ignoreRequiredProp : options.ignoreRequiredProp?.parameters ?? false,
         schemas: typeof options.ignoreRequiredProp === 'boolean' ? options.ignoreRequiredProp : options.ignoreRequiredProp?.schemas ?? false,
@@ -148,7 +170,7 @@ export class Parser {
     return {
       path,
       method,
-      operationName: operation.operationId || fallbackOperationId(path, method),
+      operationName: this.options.transformOperationId(operation.operationId ?? fallbackOperationId(path, method)),
       parameters,
       pathParameters: parameters.filter((p) => p.in === 'path'),
       queryParameters: parameters.filter((p) => p.in === 'query'),

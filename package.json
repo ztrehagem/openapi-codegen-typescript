@@ -30,10 +30,12 @@
   },
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.0.2",
+    "camel-case": "^4.1.2",
     "globby": "^11.0.1",
     "handlebars": "^4.7.7",
     "pascal-case": "^3.1.2",
-    "pkg-dir": "^5.0.0"
+    "pkg-dir": "^5.0.0",
+    "snake-case": "^3.0.4"
   },
   "devDependencies": {
     "@types/node": "^14.14.7",
