@@ -1,5 +1,6 @@
 import { OpenAPIV3 as oa } from 'openapi-types'
 import * as SwaggerParser from '@apidevtools/swagger-parser'
+import { pascalCase } from 'pascal-case'
 
 const httpMethods = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const
 
@@ -53,13 +54,7 @@ export interface TypeStringContext {
 }
 
 function fallbackOperationId(path: string, method: string) {
-  const pathPascalCased = path
-    .replace(/(?:\/|_)(\w)/g, (_, c) => c.toUpperCase())
-    .replace(
-      /\/\{(.+?)\}/g,
-      (_, term) =>
-        term.slice(0, 1).toUpperCase() + term.slice(1).toLowerCase()
-    )
+  const pathPascalCased = pascalCase(path)
   return `${method}${pathPascalCased}`
 }
 
